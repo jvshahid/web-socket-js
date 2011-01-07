@@ -205,24 +205,28 @@
     // Gets data using readSocketData() instead of getting it from event object
     // of Flash event. This is to make sure to keep message order.
     // It seems sometimes Flash events don't arrive in the same order as they are sent.
-    var arr = this.__flash.readSocketData();
-    for (var i = 0; i < arr.length; i++) {
-      var data = decodeURIComponent(arr[i]);
-      try {
-        if (this.onmessage) {
-          var e;
-          if (window.MessageEvent && !window.opera) {
-            e = document.createEvent("MessageEvent");
-            e.initMessageEvent("message", false, false, data, null, null, window, null);
-          } else { // IE and Opera, the latter one truncates the data parameter after any 0x00 bytes
-            e = {data: data};
+      var socket = this.__flash;
+      var onmessage = this.onmessage;
+      setTimeout(function() {
+          var arr = socket.readSocketData();
+          for (var i = 0; i < arr.length; i++) {
+              var data = decodeURIComponent(arr[i]);
+              try {
+                  if (onmessage) {
+                      var e;
+                      if (window.MessageEvent && !window.opera) {
+                          e = document.createEvent("MessageEvent");
+                          e.initMessageEvent("message", false, false, data, null, null, window, null);
+                      } else { // IE and Opera, the latter one truncates the data parameter after any 0x00 bytes
+                          e = {data: data};
+                      }
+                      onmessage(e);
+                  }
+              } catch (e) {
+                  console.error(e.toString());
+              }
           }
-          this.onmessage(e);
-        }
-      } catch (e) {
-        console.error(e.toString());
-      }
-    }
+      }, 0);
   };
 
   /**
